@@ -592,7 +592,9 @@ export class CandidateAssessmentService {
                 };
                 return codingQuestion;
               }
+              console.log('in try last', response.data);
             } catch (error) {
+              console.log('catch', error);
               throw new InternalServerErrorException(error);
             }
           }),
