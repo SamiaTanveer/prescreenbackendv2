@@ -557,6 +557,7 @@ export class CandidateAssessmentService {
             console.log('transform data', transformedData);
             //api call from compiler for result
             try {
+              console.log('enter in try')
               const response = await axios.post(
                 `${process.env.COMPILER_LINK}`,
                 transformedData,
