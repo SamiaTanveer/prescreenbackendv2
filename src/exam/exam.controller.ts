@@ -209,7 +209,7 @@ export class ExamController {
   // }
 
   @Get('exams/:examId')
-  @UseGuards(AuthGuard(), CompanyGuard)
+  @UseGuards(AuthGuard())
   @ApiOperation({ summary: 'Get Exam By ID' })
   @ApiResponse({
     status: 200,
