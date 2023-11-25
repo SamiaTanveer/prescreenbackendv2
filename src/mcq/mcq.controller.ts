@@ -33,7 +33,6 @@ import { MCQSearchDto } from './dto/searchMcq.dto';
 import { MCQ } from './entities/mcq.entity';
 import { AuthReq } from 'src/types';
 import { SubPlanRestrictionsService } from 'src/sub-plan-restrictions/sub-plan-restrictions.service';
-import { checkUser } from 'src/utils/funtions';
 
 @ApiTags('MCQ API')
 @ApiBearerAuth()
@@ -148,10 +147,8 @@ export class McqController {
   async findAll(@Req() req: AuthReq, @Query() query: paginationDto) {
     // Check permission for mcqsBank
     // console.log(req.user);
-    const { userType } = req.user;
-    const userid = checkUser(userType, req.user.company, req.user.id);
     const mcqs = await this.restrictionsService.checkFeaturesAllowed(
-      userid,
+      req.user.id,
       'mcqs',
     );
     if (mcqs == true) {
@@ -260,15 +257,13 @@ export class McqController {
     @Req() req: AuthReq,
     @Body() dto: { tags: string[]; language: string },
   ) {
-    const { userType } = req.user;
-    const userid = checkUser(userType, req.user.company, req.user.id);
     const { language, tags } = dto;
     if (!language) {
       throw new BadRequestException('Language is required');
     }
     // Check permission for mcqsBank
     const mcqs = await this.restrictionsService.checkFeaturesAllowed(
-      userid,
+      req.user.id,
       'mcqs',
     );
 

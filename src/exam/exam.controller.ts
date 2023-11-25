@@ -29,7 +29,6 @@ import { ExamDto, ResponsePagination } from './dto/exam.dto';
 import { AuthReq } from 'src/types';
 import { SubPlanRestrictionsService } from 'src/sub-plan-restrictions/sub-plan-restrictions.service';
 import { paginationDto } from 'src/utils/classes';
-import { checkUser } from 'src/utils/funtions';
 
 @ApiTags('Exam')
 @Controller('/api')
@@ -164,12 +163,9 @@ export class ExamController {
     type: ResponsePagination,
   })
   async findAll(@Req() req: AuthReq, @Query() query: paginationDto) {
-    const { userType } = req.user;
-    // check for usertype to send company id or userid(if company)
-    const userid = checkUser(userType, req.user.company, req.user.id);
     //  Check Permission for examBank
     const exams = await this.restrictionsService.checkFeaturesAllowed(
-      userid,
+      req.user.id,
       'exams',
     );
     console.log('exams allowed or not', exams);

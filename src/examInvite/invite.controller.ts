@@ -23,7 +23,6 @@ import { ExamInvite } from './entities/invite.entity';
 import { MailingService } from 'src/mailing/mailing.service';
 import { AuthReq, InviteEmailData } from 'src/types';
 import {
-  checkUser,
   getNormalDate,
   getupdatedTestsAllowed,
 } from 'src/utils/funtions';
@@ -81,11 +80,10 @@ export class InviteController {
     if (inviteFound) {
       throw new BadRequestException('Already Sent invite link');
     }
-    const { userType } = req.user;
-    const userid = checkUser(userType, req.user.company, req.user.id);
-    // Check limit
+    try {
+      // Check limit
     const feature = await this.restrictionsService.checkFeaturesUsed(
-      userid,
+      req.user.id,
       'tests',
       dto,
       {},
@@ -156,6 +154,10 @@ export class InviteController {
     }
 
     return invite;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+    
   }
   // TODO: not in use
   @Get('getAll')

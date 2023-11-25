@@ -31,7 +31,6 @@ import { paginationDto } from 'src/utils/classes';
 import { CodingSearchDto } from './dto/searcCodingQuestion.dto';
 import { AuthReq } from 'src/types';
 import { SubPlanRestrictionsService } from 'src/sub-plan-restrictions/sub-plan-restrictions.service';
-import { checkUser } from 'src/utils/funtions';
 
 @ApiTags('Coding Questions')
 @ApiBearerAuth()
@@ -176,11 +175,9 @@ export class CodingQuestionsController {
     description: 'Coding Questions not found',
   })
   async getAllQuestions(@Req() req: AuthReq, @Query() query: paginationDto) {
-    const { userType } = req.user;
-    const userid = checkUser(userType, req.user.company, req.user.id);
     // Check permission for codingBank
     const codingQuestion = await this.restrictionsService.checkFeaturesAllowed(
-      userid,
+      req.user.id,
       'codingQuestion',
     );
     if (codingQuestion == true) {
@@ -282,10 +279,6 @@ export class CodingQuestionsController {
     @Body() dto: { tags: string[]; language: string },
   ) {
     // let userid = req.user.id;
-    const { userType } = req.user;
-    // check userid for company or company Teams
-    const userid = checkUser(userType, req.user.company, req.user.id);
-
     const { language, tags } = dto;
 
     if (!language) {
@@ -293,7 +286,7 @@ export class CodingQuestionsController {
     }
     // Check permission for codingBank
     const codingQuestion = await this.restrictionsService.checkFeaturesAllowed(
-      userid,
+      req.user.id,
       'codingQuestion',
     );
     if (codingQuestion == true) {

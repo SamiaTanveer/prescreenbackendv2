@@ -35,7 +35,6 @@ import {
 import { RejectDto } from 'src/utils/classes';
 import { SubPlanRestrictionsService } from 'src/sub-plan-restrictions/sub-plan-restrictions.service';
 import {
-  checkUser,
   getNormalDate,
   getupdatedJobsAllowed,
 } from 'src/utils/funtions';
@@ -155,12 +154,9 @@ export class JobController {
     dto.createdBy = req.user.id;
     dto.jobStatus = 'open';
 
-    const { userType } = req.user;
-    const userid = checkUser(userType, req.user.company, req.user.id);
-
     // Check limit
     const feature = await this.restrictionsService.checkFeaturesUsed(
-      userid,
+      req.user.id,
       'jobs',
       {},
       dto,
