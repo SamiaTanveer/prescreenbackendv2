@@ -45,6 +45,7 @@ import { SubPlanRestrictionsService } from 'src/sub-plan-restrictions/sub-plan-r
 import { BadRequestException } from '@nestjs/common';
 import { calculateTotalQuestions } from 'src/utils/funtions';
 import { CompanyGuard } from 'src/auth/jwt.company.guard';
+import { JobService } from 'src/job/job.service';
 @ApiTags('Candidate Assessment')
 @ApiBearerAuth()
 @ApiSecurity('JWT-auth')
@@ -53,6 +54,7 @@ export class CandidateAssessmentController {
   constructor(
     private readonly candidateAssessmentService: CandidateAssessmentService,
     private readonly examService: ExamService,
+    private readonly jobService: JobService,
     private readonly codingService: CodingQuestionsService,
     private readonly mcqService: McqService,
     private readonly restrictionsService: SubPlanRestrictionsService,
@@ -71,7 +73,13 @@ export class CandidateAssessmentController {
     // check here if previous assessment is in DB todo
     // get exam by ID
     const exam = await this.examService.findById(dto.exam);
-    const compId = exam?.createdBy?.toString() || '';
+    const job = await this.jobService.findById(dto.job);
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    const compId = job?.createdBy?.toString();
 
     if (!exam) {
       throw new NotFoundException('Exam not found');
