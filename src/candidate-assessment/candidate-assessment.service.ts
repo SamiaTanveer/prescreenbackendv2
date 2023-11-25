@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -523,84 +524,90 @@ export class CandidateAssessmentService {
       // if coding array length reaches, end paper
       if (currentIndex >= candidateAssessment.codings.length) {
         // loop through candidateAssessment.codingQuestions, from in it get question from db, call compiler with answer, and if true then update array with that question and set correct = true otherwise correct = false
-
-        const updatedQuestions = await Promise.all(
-          candidateAssessment.codingQuestions.map(async (question) => {
-            const questionFound = await this.CodingModel.findById(
-              question.questionId,
-            );
-
-            if (!questionFound) {
-              throw new NotFoundException('Coding Question not found');
-            }
-
-            // convert question into desired format
-            function transformData(originalData: any, dto: any) {
-              const organizedData = {
-                test: '1',
-                language: questionFound?.language,
-                executionMode: 'code',
-                code: dto.answer,
-                // code: dto.question.answer.replace(/<p>|<\/p>/g, ''),
-                stdin: '',
-                args: '',
-                functionName: originalData.functionName,
-                testCases: originalData.testCases.map((testCase: any) => ({
-                  input: JSON.parse(testCase.input),
-                  output: testCase.output,
-                })),
-              };
-              return organizedData;
-            }
-
-            const transformedData = transformData(questionFound, question);
-            console.log('transform data', transformedData);
-            //api call from compiler for result
-            try {
-              console.log('enter in try', process.env.COMPILER_LINK )
-              const response = await axios.post(
-                `${process.env.COMPILER_LINK}`,
-                transformedData,
+        let updatedQuestions;
+        try {
+          updatedQuestions = await Promise.all(
+            candidateAssessment.codingQuestions.map(async (question) => {
+              const questionFound = await this.CodingModel.findById(
+                question.questionId,
               );
-              console.log('compiler result:', response.data);
-              if (response.data.stdout == true) {
-                const codingQuestion = {
-                  questionId: question.questionId,
-                  answer: question.answer,
-                  correct: true,
-                };
-                // candidateAssessment.codingQuestions[index] = codingQuestion;
-                // console.log(candidateAssessment.codingQuestions[index]);
-                candidateAssessment.testPointer.points += 1;
-                // TODO marks on basis of difficulty level
-                // if ((question.difficultyLevel = "easy")) {
-                //   candidateAssessment.testPointer.points += 0.5;
-                // } else if ((question.difficultyLevel = "medium")) {
-                //   candidateAssessment.testPointer.points += 1;
-                // } else if ((question.difficultyLevel = "hard")) {
-                //   candidateAssessment.testPointer.points += 3;
-                // }
-                // candidateAssessment.testPointer.points += 1;
-                // call percentage function
-                const percentage = calculatePercentage(candidateAssessment);
-                candidateAssessment.testPointer.obtainPercentage = percentage;
-                return codingQuestion;
-                // await candidateAssessment.save();
-              } else if (response.data.stdout == false) {
-                const codingQuestion = {
-                  questionId: question.questionId,
-                  answer: question.answer,
-                  correct: false,
-                };
-                return codingQuestion;
+  
+              if (!questionFound) {
+                throw new NotFoundException('Coding Question not found');
               }
-              // console.log('in try last', response.data);
-            } catch (error) {
-              console.log('catch', error);
-              throw new InternalServerErrorException(error);
-            }
-          }),
-        );
+  
+              // convert question into desired format
+              function transformData(originalData: any, dto: any) {
+                const organizedData = {
+                  test: '1',
+                  language: questionFound?.language,
+                  executionMode: 'code',
+                  code: dto.answer,
+                  // code: dto.question.answer.replace(/<p>|<\/p>/g, ''),
+                  stdin: '',
+                  args: '',
+                  functionName: originalData.functionName,
+                  testCases: originalData.testCases.map((testCase: any) => ({
+                    input: JSON.parse(testCase.input),
+                    output: testCase.output,
+                  })),
+                };
+                return organizedData;
+              }
+  
+              const transformedData = transformData(questionFound, question);
+              console.log('transform data', transformedData);
+              //api call from compiler for result
+              // try {
+                console.log('enter in try', process.env.COMPILER_LINK )
+                const response = await axios.post(
+                  `${process.env.COMPILER_LINK}`,
+                  transformedData,
+                );
+                console.log('compiler result:', response.data);
+                if (response.data.stdout == true) {
+                  const codingQuestion = {
+                    questionId: question.questionId,
+                    answer: question.answer,
+                    correct: true,
+                  };
+                  // candidateAssessment.codingQuestions[index] = codingQuestion;
+                  // console.log(candidateAssessment.codingQuestions[index]);
+                  candidateAssessment.testPointer.points += 1;
+                  // TODO marks on basis of difficulty level
+                  // if ((question.difficultyLevel = "easy")) {
+                  //   candidateAssessment.testPointer.points += 0.5;
+                  // } else if ((question.difficultyLevel = "medium")) {
+                  //   candidateAssessment.testPointer.points += 1;
+                  // } else if ((question.difficultyLevel = "hard")) {
+                  //   candidateAssessment.testPointer.points += 3;
+                  // }
+                  // candidateAssessment.testPointer.points += 1;
+                  // call percentage function
+                  const percentage = calculatePercentage(candidateAssessment);
+                  candidateAssessment.testPointer.obtainPercentage = percentage;
+                  return codingQuestion;
+                  // await candidateAssessment.save();
+                } else if (response.data.stdout == false) {
+                  const codingQuestion = {
+                    questionId: question.questionId,
+                    answer: question.answer,
+                    correct: false,
+                  };
+                  return codingQuestion;
+                }
+                // console.log('in try last', response.data);
+              // } catch (error) {
+              //   console.log('catch', error);
+              //   throw new InternalServerErrorException(error);
+              // }
+            }),
+          );
+          
+        } catch (error) {
+          console.log('error....', error);
+          throw new BadRequestException(error.message)
+        }
         // console.log('updated questions are', updatedQuestions);
         candidateAssessment.codingQuestions = updatedQuestions as {
           questionId: string;
